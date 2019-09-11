@@ -1,7 +1,7 @@
 # Vim 从入门到精通
 
 > 本文主要在翻译 [mhinz/vim-galore](https://github.com/mhinz/vim-galore)
-的基础添加了一些我在使用 Vim 及开发 Vim 插件的过程中积累的一些细节。
+> 的基础添加了一些我在使用 Vim 及开发 Vim 插件的过程中积累的一些知识和常用插件列表。
 
 **Vim 中文同步聊天室**
 
@@ -68,12 +68,16 @@
     - [在 Vim 7 或者更早的版本中安装](#在-vim-7-或者更早的版本中安装)
     - [简短的介绍](#简短的介绍)
 - [技巧](#技巧)
+  - [跳至选择的区域另一端](#跳至选择的区域另一端)
   - [聪明地使用 n 和 N](#聪明地使用-n-和-n)
   - [聪明地使用命令行历史](#聪明地使用命令行历史)
   - [智能 Ctrl-l](#智能-ctrl-l)
   - [禁用错误报警声音和图标](#禁用错误报警声音和图标)
   - [快速移动当前行](#快速移动当前行)
   - [快速添加空行](#快速添加空行)
+    - [运行时检测](#运行时检测)
+    - [查看启动时间](#查看启动时间)
+  - [NUL 符用新行表示](#nul-符用新行表示)
   - [快速编辑自定义宏](#快速编辑自定义宏)
   - [快速跳转到源(头)文件](#快速跳转到源头文件)
   - [在 GUI 中快速改变字体大小](#在-gui-中快速改变字体大小)
@@ -97,17 +101,12 @@
 - [杂项](#杂项)
   - [附加资源](#附加资源)
   - [Vim 配置集合](#vim-配置集合)
-  - [内置插件](#内置插件)
-  - [将 Control 映射到 CapsLock](#将-control-映射到-capslock)
-  - [复活节彩蛋](#复活节彩蛋)
-  - [为何使用 hjkl](#为何使用-hjkl)
   - [常见问题](#常见问题)
     - [编辑小文件时很慢](#编辑小文件时很慢)
     - [编辑大文件的时候很慢](#编辑大文件的时候很慢)
     - [持续粘贴（为什么我每次都要设置 'paste' 模式）](#持续粘贴为什么我每次都要设置-paste-模式)
     - [在终端中按 ESC 后有延时](#在终端中按-esc-后有延时)
     - [无法重复函数中执行的搜索](#无法重复函数中执行的搜索)
-  - [插件列表](#插件列表)
   - [进阶阅读](#进阶阅读)
   - [加入我们](#加入我们)
 
@@ -141,8 +140,10 @@ Vim 采用模式编辑的理念，即它提供了多种模式，按键在不同�
 但是这有一个很大的优点：不需要通过同时按住多个键来完成操作，
 大多数时候你只需要依次按下这些按键即可。越常用的操作，所需要的按键数量越少。
 
-和模式编辑紧密相连的概念是“操作符”和“动作”。_操作符_ 开始一些行为，例如：修改，删除，或者选择文本。之后你要用一个 _动作_ 来指定需要操作的文本区域。比如，要改变括号内的文本，需要执行 `ci(` （读做 _change inner parentheses_）；删除整个段落的内容，需要执行 `dap` （读做：_delete
-around paragraph_）。
+和模式编辑紧密相连的概念是 **操作符** 和 **动作**。**操作符** 指的是开始某个行为，
+例如：修改、删除或者选择文本，之后你要用一个 **动作** 来指定需要操作的文本区域。
+比如，要改变括号内的文本，需要执行 `ci(` （读做 `change inner parentheses`）；
+删除整个段落的内容，需要执行 `dap` （读做：`delete around paragraph`）。
 
 如果你能看见 Vim 老司机操作，你会发现他们使用 Vim 脚本语言就如同钢琴师弹钢琴一样。复杂的操作只需要几个按键就能完成。他们甚至不用刻意去想，因为这已经成为[肌肉记忆](https://en.wikipedia.org/wiki/Muscle_memory)了。这减少[认识负荷](https://en.wikipedia.org/wiki/Cognitive_load)并帮助人们专注于实际任务。
 
@@ -178,7 +179,7 @@ Vim 基于一个 [vi](https://en.wikipedia.org/wiki/Vi) 克隆，叫做 [Stevie]
 
 精简的 vimrc 地址：[minimal-vimrc](contents/minimal-vimrc.vim)
 
-如果你有兴趣，这里是我（原作者）的 [vimrc](https://github.com/mhinz/dotfiles/blob/master/vim/vimrc)。
+如果你有兴趣，这里是我（原作者）的 [vimrc](https://github.com/mhinz/dotfiles/blob/master/.vim/vimrc)。
 
 **建议**：大多数插件作者都维护不止一个插件并且将他们的 vimrc 放在 Github 上展示（通常放在叫做 "vim-config" 或者 "dotfiles" 的仓库中），所以当你发现你喜欢的插件时，去插件维护者的 Github 主页看看有没有这样的仓库。
 
@@ -360,9 +361,11 @@ nnoremap <leader>h :helpgrep<space>
 这样，我们只需要先按 <kbd>\\</kbd> 然后连续按 <kbd>\\h</kbd> 就可以激活这个映射 `:helpgrep<space>`。如果你想通过先按 <kbd>空格</kbd> 键来触发，只需要这样做：
 
 ```vim
-let mapleader = ' '
+let g:mapleader = ' '
 nnoremap <leader>h :helpgrep<space>
 ```
+
+此处建议使用 `g:mapleader`，因为在 Vim 脚本中，函数外的变量缺省的作用域是全局变量，但是在函数内缺省作用域是局部变量，而设置快捷键前缀需要修改全局变量 `g:mapleader` 的值。
 
 另外，还有一个叫 `<localleader>` 的，可以把它理解为局部环境中的 `<leader>`，默认值依然为 <kbd>\\</kbd>。当我们需要只对某一个条件下（比如，特定文件类型的插件）的缓冲区设置特别的 `<leader>` 键，那么我们就可以通过修改当前环境下的 `<localleader>` 来实现。
 
@@ -1427,6 +1430,15 @@ autocmd FileType python let b:match_words = '\<if\>:\<elif\>:\<else\>'
 
 # 技巧
 
+## 跳至选择的区域另一端
+
+在使用 `v` 或者 `V` 选择某段文字后，可以用 `o` 或者 `O` 按键跳至选择区域的开头或者结尾。
+
+```
+:h v_o
+:h v_O
+```
+
 ## 聪明地使用 n 和 N
 
 <kbd>n</kbd> 与 <kbd>N</kbd> 的实际跳转方向取决于使用 `/` 还是 `?` 来执行搜索，其中 `/` 是向后搜索，`?` 是向前搜索。一开始我（原作者）觉得这里很难理解。
@@ -1490,6 +1502,47 @@ nnoremap ]<space>  :<c-u>put =repeat(nr2char(10), v:count1)<cr>
 ```
 
 设置之后，连续按下 <kbd>5</kbd> <kbd>\[</kbd> <kbd>空格</kbd> 在当前行上方插入 5 个空行。
+
+### 运行时检测
+
+需要的特性：+profile
+
+Vim 提供了一个内置的运行时检查功能，能够找出运行慢的代码。
+
+`:profile` 命令后面跟着子命令来确定要查看什么。
+
+如果你想查看所有的：
+
+```Vim
+:profile start /tmp/profile.log
+:profile file *
+:profile func *
+<do something in Vim>
+<quit Vim>
+```
+
+Vim 不断地在内存中检查信息，只在退出的时候输出出来。（Neovim 已经解决了这个问题用 `:profile dump` 命令）
+
+看一下 `/tmp/profile.log` 文件，检查时运行的所有代码都会被显示出来，包括每一行代码运行的频率和时间。
+
+大多数代码都是用户不熟悉的插件代码，如果你是在解决一个确切的问题，
+直接跳到这个日志文件的末尾，那里有 `FUNCTIONS SORTED ON TOTAL TIME` 和 `FUNCTIONS SORTED ON SELF TIME` 两个部分，如果某个 function 运行时间过长一眼就可以看到。
+
+### 查看启动时间
+
+感觉 Vim 启动的慢？到了研究几个数字的时候了：
+
+```vim
+vim --startuptime /tmp/startup.log +q && vim /tmp/startup.log
+```
+
+第一栏是最重要的因为它显示了**绝对运行时间**，如果在前后两行之间时间差有很大的跳跃，那么是第二个文件太大或者含有需要检查的错误的 VimL 代码。
+
+## NUL 符用新行表示
+
+文件中的 NUL 符 （`\0`），在内存中被以新行（`\n`）保存，在缓存空间中显示为 `^@`。
+
+更多信息请参看 `man 7 ascii` 和 `:h NL-used-for-Nul` 。
 
 ## 快速编辑自定义宏
 
@@ -1803,13 +1856,13 @@ Vim 现在正在使用的另一个比较有用的方法是增加 debug 信息输
 
 ## Vim 配置集合
 
-## 内置插件
+目前，网上有很多流行 Vim 配置集合，对于 Vim 配置集合，个人认为有利有弊。
+对于维护的比较好的配置，比如 [SpaceVim](http://spacevim.org/cn/) 还是值得尝试的，可以节省很多自行配置的时间。
+当然，网上还有很多其他很流行的配置，比如：
 
-## 将 Control 映射到 CapsLock
-
-## 复活节彩蛋
-
-## 为何使用 hjkl
+- [k-vim](https://github.com/wklken/k-vim)
+- [amix's vimrc](https://github.com/amix/vimrc)
+- [janus](https://github.com/carlhuda/janus)
 
 ## 常见问题
 
@@ -1922,11 +1975,10 @@ set ttimeoutlen=10    " unnoticeable small value
 
 帮助文档：`:h function-search-undo`。
 
-## [插件列表](PLUGINS.md)
-
 ## 进阶阅读
 
 - [Vim 插件开发指南](https://github.com/wsdjeg/vim-plugin-dev-guide)
+- [常用插件列表](PLUGINS.md)
 
 ## 加入我们
 
